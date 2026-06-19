@@ -59,3 +59,6 @@ package-lock.json
 *.bak
 *.log
 tmp/
+
+# Kimchi session logs (may contain sensitive content)
+.kimchi/ferments/
