@@ -5,7 +5,7 @@ Production AWS infrastructure for [Spring Petclinic Microservices](https://githu
 ## Repository Structure
 
 ```
-petclinic-platform/
+petclinic/
 │
 ├── terraform/                    # Infrastructure as Code
 │   ├── environments/

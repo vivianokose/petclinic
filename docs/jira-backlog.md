@@ -64,13 +64,13 @@ E-1 (Foundation)
 # EPIC E-0: Claude Code Setup
 
 **Priority:** P0
-**Description:** Configure Claude Code for the petclinic-platform repo before writing any infrastructure code. This sets up the AI agent's context, safety guardrails, workflows, and tooling so every subsequent task benefits from intelligent assistance.
+**Description:** Configure Claude Code for the petclinic repo before writing any infrastructure code. This sets up the AI agent's context, safety guardrails, workflows, and tooling so every subsequent task benefits from intelligent assistance.
 **Blocked by:** None
 **Blocks:** E-1 (all subsequent work uses this configuration)
 
 ---
 
-### PETPLAT-001: Configure MCP servers for petclinic-platform
+### PETPLAT-001: Configure MCP servers for petclinic
 
 **Type:** Task
 **Priority:** P0
@@ -83,7 +83,7 @@ E-1 (Foundation)
 Create `.mcp.json` at the project root with all MCP servers needed for the infrastructure workflow. These servers give Claude Code access to Terraform docs, AWS knowledge, pricing data, library documentation, and Jira.
 
 **Acceptance Criteria:**
-- [ ] `.mcp.json` at petclinic-platform root
+- [ ] `.mcp.json` at petclinic root
 - [ ] Terraform MCP server configured (`awslabs.terraform-mcp-server`)
 - [ ] AWS Knowledge MCP configured (`aws-knowledge-mcp`)
 - [ ] AWS Pricing MCP configured (`awslabs.aws-pricing-mcp-server`, region: eu-central-1)
@@ -174,7 +174,7 @@ Create file-pattern rules (`.claude/rules/`), review subagents (`.claude/agents/
 **Blocked by:** PETPLAT-003
 
 **Description:**
-Start a new Claude Code session in petclinic-platform/ and verify the full configuration is working: CLAUDE.md loads, MCP servers connect, skills appear, hooks fire, rules activate on file patterns.
+Start a new Claude Code session in petclinic/ and verify the full configuration is working: CLAUDE.md loads, MCP servers connect, skills appear, hooks fire, rules activate on file patterns.
 
 **Acceptance Criteria:**
 - [ ] CLAUDE.md project conventions visible in Claude's context
@@ -206,7 +206,7 @@ Start a new Claude Code session in petclinic-platform/ and verify the full confi
 **Labels:** terraform, foundation
 
 **Description:**
-Create the Terraform directory structure in petclinic-platform with separate environment root modules and shared reusable modules.
+Create the Terraform directory structure in petclinic with separate environment root modules and shared reusable modules.
 
 **Technical Spec:** [General Project Parameters](./technical-spec.md#general-project-parameters), [Terraform Modules](./technical-spec.md#terraform-modules)
 
@@ -2169,7 +2169,7 @@ Create ADRs for key architecture decisions made during the project.
 
 ---
 
-### PETPLAT-82: Create CLAUDE.md for petclinic-platform repo
+### PETPLAT-82: Create CLAUDE.md for petclinic repo
 
 **Type:** Task
 **Priority:** P0
@@ -2179,10 +2179,10 @@ Create ADRs for key architecture decisions made during the project.
 **Blocked by:** None
 
 **Description:**
-Create a CLAUDE.md in petclinic-platform that gives Claude Code full context about the infrastructure repo. This is the first file created — it establishes conventions before any infrastructure code is written.
+Create a CLAUDE.md in petclinic that gives Claude Code full context about the infrastructure repo. This is the first file created — it establishes conventions before any infrastructure code is written.
 
 **Acceptance Criteria:**
-- [ ] `CLAUDE.md` at petclinic-platform root (< 200 lines)
+- [ ] `CLAUDE.md` at petclinic root (< 200 lines)
 - [ ] Repo purpose and directory layout
 - [ ] Terraform conventions (module pattern, naming, state, tags)
 - [ ] K8s manifest conventions (labels, probes, resources, secrets)
@@ -2866,7 +2866,7 @@ Create ArgoCD Application CRDs for all 8 Petclinic services in the dev environme
 - [ ] Each Application uses values files: `helm-values/{service}.yaml` + `helm-values/dev.yaml`
 - [ ] Sync policy: `automated` with `selfHeal: true` and `prune: true`
 - [ ] Destination namespace: `petclinic-dev`
-- [ ] Source repo: petclinic-platform Git URL
+- [ ] Source repo: petclinic Git URL
 - [ ] All 8 applications visible and synced in ArgoCD UI
 - [ ] Verified: push a tag change → ArgoCD auto-syncs → new image deployed
 

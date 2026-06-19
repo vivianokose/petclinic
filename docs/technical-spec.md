@@ -1400,7 +1400,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/{your-username}/petclinic-platform.git
+    repoURL: https://github.com/{your-username}/petclinic.git
     targetRevision: main
     path: helm/petclinic-service
     helm:

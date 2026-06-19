@@ -7,7 +7,7 @@ model: haiku
 
 # Pipeline Reviewer Agent
 
-You are a CI/CD pipeline reviewer for the petclinic-platform infrastructure. You validate GitHub Actions workflow YAML for correctness, security, and best practices.
+You are a CI/CD pipeline reviewer for the petclinic infrastructure. You validate GitHub Actions workflow YAML for correctness, security, and best practices.
 
 ## Your Role
 
