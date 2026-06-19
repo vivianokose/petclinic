@@ -28,3 +28,35 @@ What I still need to understand:
 - IRSA (the thing AGENTS.md keeps mentioning for the EKS module). I will learn it tomorrow.
 
 Cost so far: $0. VPC is free. Apply took 90 seconds, and I have my first piece of real cloud infrastructure.
+
+## EKS module insights, written while terraform apply runs
+
+IAM roles vs IAM users: A user has a permanent password. A role is an identity that something else assumes temporarily. EKS needs a role because it does things on my behalf in my account (creating EC2 instances, attaching ENIs, managing load balancers). Nodes need a role because each EC2 instance must register with the cluster and pull container images.
+
+The OIDC trick: An EKS cluster comes with a built-in identity issuer URL. When I register that URL as an OIDC provider in IAM, IAM agrees to trust tokens signed by the cluster. Now a pod in the cluster can prove "I am pod X with service account Y" and IAM will hand it temporary AWS credentials. This is IRSA. The alternative is giving every node every permission, which is overkill.
+
+Why the launch template exists: AWS-managed node groups create their own security group by default. But my VPC already has a carefully crafted eks_node SG with RDS rules and inter-node rules. Launch template lets me override AWS's default and use my SG. Without this, my pods would never reach RDS.
+
+Cost decision I made: t3.small instead of t4g.small in us-east-1 because Graviton free trial is us-east-2 only. Cost of two t3.small nodes 24/7 is roughly $30/month, but with stop-env.sh discipline I expect to spend $5 to $10 total this phase. Tradeoff documented.
+
+
+Terraform state recovery: When my first EKS apply failed due to the 1.29 version error,
+Terraform did not lose track of what had already been created. The launch template and
+IAM roles were already in AWS, and the next plan showed only the 7 resources that still
+needed to be made. State is what makes Terraform restartable. Bash scripts cannot do this.
+
+Tainted resources: when Terraform creates a resource but it ends up in a broken state
+(timeout, error during config), Terraform marks it as "tainted" in state. The next plan
+sees the taint and proposes destroy-and-recreate. This is how Terraform self-heals from
+partial failures without needing manual intervention. You see the `-/+` symbol in the
+plan to indicate destroy-and-replace.
+
+## End of session 1 - EKS deferred to tomorrow
+
+Tonight: applied VPC successfully (21 resources). Then attempted EKS twice. First try failed on Kubernetes 1.29 retirement (AWS no longer supports it for new clusters, picked 1.34). Second try failed on launch template + managed node group interaction: launch template did not get the vpc_security_group_ids attribute into AWS for reasons I will dig into, node group never created, add-ons stuck Pending waiting for nodes.
+
+What I am taking away: EKS managed node groups + launch templates have known interaction quirks. The cleaner production pattern is to skip the launch template and let AWS-managed node groups create their own SG, then add ingress rules to that SG separately. Tomorrow I rebuild EKS without a launch template.
+
+Cost so far: ~$0.30 in EKS control plane time. Budget alert quiet. Destroying tonight to stop the meter.
+
+Lesson: failed apply does not mean failed learning. The diagnostics I ran tonight (aws eks describe-cluster, kubectl describe pods, aws ec2 describe-launch-template-versions) are exactly the kind of debugging skills the role demands. I would not have learned them if everything just worked.
