@@ -64,3 +64,38 @@ output "node_role_arn" {
   description = "The ARN of the IAM role assigned to the worker nodes"
   value       = module.eks.node_role_arn
 }
+
+# RDS outputs
+output "rds_endpoint" {
+  description = "RDS endpoint (host:port)"
+  value       = module.rds.endpoint
+  sensitive   = true
+}
+
+output "rds_host" {
+  description = "RDS hostname"
+  value       = module.rds.host
+  sensitive   = true
+}
+
+output "rds_port" {
+  description = "RDS port"
+  value       = module.rds.port
+}
+
+output "rds_db_instance_id" {
+  description = "RDS DB instance ID"
+  value       = module.rds.db_instance_id
+}
+
+output "rds_secret_arn" {
+  description = "Secrets Manager secret ARN for RDS credentials"
+  value       = module.rds.secret_arn
+  sensitive   = true
+}
+
+output "rds_secret_name" {
+  description = "Secrets Manager secret name for RDS credentials"
+  value       = module.rds.secret_name
+  sensitive   = true
+}

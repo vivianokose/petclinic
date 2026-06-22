@@ -103,3 +103,38 @@ alert at $20 has not triggered. Well within target.
 
 Next phase: stop the environment to save cost while I write content, then come back 
 fresh for Phase 2 (RDS MySQL).
+
+
+## Phase 2 start - scaling nodes back up
+
+Restarting work after a content-and-rest break post-Phase-1. Nodes were scaled to zero
+to stop the ~$10/month EC2 cost while not actively working. EKS control plane stays
+running at $0.10/hour because it cannot be stopped without destroying the cluster.
+
+Today's goal: provision RDS MySQL on AWS with credentials in Secrets Manager, then
+verify a pod inside EKS can connect to it. We are NOT connecting Spring PetClinic
+to it yet, that comes later.
+
+About the design choice: the RDS instance goes in public subnets because we did not
+create private subnets in Phase 1 (NAT Gateway saving). Its security group only
+allows traffic from the EKS node security group, so the database is not actually
+exposed to the internet despite being in a public subnet. Production would use
+private subnets, but this works and is honest about the tradeoff.
+
+RDS free tier discovery: AWS free tier limits backup_retention_period.
+The guide-default of 7 days exceeds the free tier cap. Set to 0 for
+learning environments where backups are not needed. Set to 1 if you
+need at least one day of backups while staying free.
+
+Lesson: AWS error messages are usually specific and actionable.
+Read them carefully before assuming the problem is complex.
+
+## Phase 2 in progress - RDS apply
+
+First apply attempt got a FreeTierRestrictionError on backup_retention_period.
+AWS free tier limits this to 0 or 1. Changed default from 7 to 0. Re-apply works.
+
+Notice how Terraform's partial-state model saved time again: the parameter group, 
+subnet group, random values, and secret container were all created before the 
+instance failed. The retry plan only needs 2 resources, not the original 7.
+This is why we trust state.

@@ -26,3 +26,12 @@ module "eks" {
   subnet_ids                = module.vpc.public_subnet_ids
   cluster_security_group_id = module.vpc.eks_cluster_sg_id
 }
+
+module "rds" {
+  source = "../../modules/rds"
+
+  environment       = var.environment
+  vpc_id            = module.vpc.vpc_id
+  subnet_ids        = module.vpc.public_subnet_ids
+  security_group_id = module.vpc.rds_sg_id
+}
