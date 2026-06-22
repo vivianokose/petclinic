@@ -11,6 +11,7 @@ output "cluster_endpoint" {
 output "cluster_ca_certificate" {
   description = "Base64-encoded certificate data required to communicate with the cluster"
   value       = aws_eks_cluster.main.certificate_authority[0].data
+  sensitive   = true
 }
 
 output "oidc_provider_arn" {

@@ -43,48 +43,6 @@ resource "aws_iam_role_policy_attachment" "cluster" {
 }
 
 # ---------------------------------------------------------------------------
-# Node IAM Role
-# ---------------------------------------------------------------------------
-resource "aws_iam_role" "node" {
-  name = "${local.name}-node-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  tags = merge(
-    local.tags,
-    {
-      Name = "${local.name}-node-role"
-    }
-  )
-}
-
-resource "aws_iam_role_policy_attachment" "node_worker" {
-  role       = aws_iam_role.node.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "node_cni" {
-  role       = aws_iam_role.node.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
-
-resource "aws_iam_role_policy_attachment" "node_ecr" {
-  role       = aws_iam_role.node.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-# ---------------------------------------------------------------------------
 # EKS Cluster
 # ---------------------------------------------------------------------------
 resource "aws_eks_cluster" "main" {
@@ -129,51 +87,49 @@ resource "aws_iam_openid_connect_provider" "eks" {
 }
 
 # ---------------------------------------------------------------------------
-# Launch Template (to attach the VPC node security group)
+# Node IAM Role
 # ---------------------------------------------------------------------------
-resource "aws_launch_template" "node" {
-  name_prefix = "${local.name}-node-"
+resource "aws_iam_role" "node" {
+  name = "${local.name}-node-role"
 
-  vpc_security_group_ids = [var.node_security_group_id]
-   block_device_mappings {
-    device_name = "/dev/xvda"
-    ebs {
-      volume_size           = 20
-      volume_type           = "gp3"
-      delete_on_termination = true
-      encrypted             = true
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "${local.name}-node-role"
     }
-  }
+  )
+}
 
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(
-      local.tags,
-      {
-        Name = "${local.name}-node"
-      }
-    )
-  }
+resource "aws_iam_role_policy_attachment" "node_worker" {
+  role       = aws_iam_role.node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
 
-  tag_specifications {
-    resource_type = "volume"
-    tags = merge(
-      local.tags,
-      {
-        Name = "${local.name}-node-volume"
-      }
-    )
-  }
+resource "aws_iam_role_policy_attachment" "node_cni" {
+  role       = aws_iam_role.node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
 
-  tags = local.tags
-
-  lifecycle {
-    create_before_destroy = true
-  }
+resource "aws_iam_role_policy_attachment" "node_ecr" {
+  role       = aws_iam_role.node.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 # ---------------------------------------------------------------------------
-# Managed Node Group
+# Managed Node Group (no launch template)
 # ---------------------------------------------------------------------------
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
@@ -181,9 +137,10 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.subnet_ids
 
+  ami_type       = "AL2023_x86_64_STANDARD"
   capacity_type  = "ON_DEMAND"
-  ami_type       = "AL2_x86_64"
   instance_types = var.node_instance_types
+  disk_size      = 20
 
   scaling_config {
     desired_size = var.desired_capacity
@@ -195,16 +152,10 @@ resource "aws_eks_node_group" "main" {
     max_unavailable_percentage = 25
   }
 
-  launch_template {
-    id      = aws_launch_template.node.id
-    version = aws_launch_template.node.latest_version
-  }
-
   depends_on = [
     aws_iam_role_policy_attachment.node_worker,
     aws_iam_role_policy_attachment.node_cni,
     aws_iam_role_policy_attachment.node_ecr,
-    aws_eks_addon.this["vpc-cni"],
   ]
 
   tags = merge(
@@ -223,7 +174,6 @@ locals {
     coredns            = {}
     kube-proxy         = {}
     vpc-cni            = {}
-    aws-ebs-csi-driver = {}
   }
 }
 
@@ -243,7 +193,9 @@ resource "aws_eks_addon" "this" {
   addon_version               = data.aws_eks_addon_version.latest[each.key].version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+	depends_on = [
+    aws_eks_node_group.main,
+	]
 
   tags = local.tags
 }
-

@@ -18,3 +18,35 @@ Why I need it: Pods often need to do things in AWS (read S3, pull secrets, updat
 How it works: EKS hosts an OIDC issuer. AWS IAM trusts the issuer. Pods get signed tokens from EKS. They exchange those tokens with STS for temporary AWS credentials.
 
 What breaks without it: Pods cannot safely access AWS APIs. External Secrets Operator and AWS Load Balancer Controller both depend on it.
+
+## Why no launch template for EKS managed node groups
+
+What I tried first: A custom launch template attached to the managed node group to inject our VPC's eks_node security group.
+
+What broke: The vpc_security_group_ids in the launch template did not propagate cleanly to the node group at creation. The node group failed to launch instances. EKS add-ons that depend on running pods (coredns, ebs-csi-driver) stuck in Pending for 41 minutes before timing out.
+
+What I do instead: Let the AWS-managed node group create its own security group automatically. Set disk_size and instance_types directly on the node group resource. If we need to add custom rules to the auto-created SG later (for example to allow RDS access), we add them as standalone aws_vpc_security_group_ingress_rule resources after the node group exists.
+
+When to use a launch template: When you need things AWS-managed node groups do not support natively. Custom AMIs, complex network interfaces, EC2 user data scripts. For standard cluster setups with default networking, skip it.
+
+The lesson: when documentation pushes you toward a more complex pattern (launch template) when a simpler one (disk on node group) works for your needs, go simpler. Add complexity only when a real requirement forces you to.
+
+## Why the EBS CSI driver is not installed in Phase 1
+
+What it is: An EKS add-on that lets pods request persistent storage on EBS volumes.
+
+Why it failed to install initially: The EBS CSI controller pod tries to make AWS API calls to create and attach volumes. Without IRSA (IAM Roles for Service Accounts) mapping a service account to an IAM role with EBS permissions, the controller has no AWS credentials and crash loops trying to authenticate.
+
+What I am doing instead: Removed the add-on from Phase 1. Will add it back in Phase 4 when I set up IRSA properly. Phase 1 and Phase 2 (RDS) do not need persistent volumes.
+
+Lesson: Add-ons that need AWS API access need IRSA. Installing them without IRSA results in healthy-looking pods that cannot do their job. EKS reports the add-on as DEGRADED or CREATING, which is correct from AWS's perspective.
+
+## Why the EBS CSI driver is not installed in Phase 1
+
+What it is: An EKS add-on that lets pods request persistent storage on EBS volumes.
+
+Why it failed to install initially: The EBS CSI controller pod tries to make AWS API calls to create and attach volumes. Without IRSA (IAM Roles for Service Accounts) mapping a service account to an IAM role with EBS permissions, the controller has no AWS credentials and crash loops trying to authenticate.
+
+What I am doing instead: Removed the add-on from Phase 1. Will add it back in Phase 4 when I set up IRSA properly. Phase 1 and Phase 2 (RDS) do not need persistent volumes.
+
+Lesson: Add-ons that need AWS API access need IRSA. Installing them without IRSA results in healthy-looking pods that cannot do their job. EKS reports the add-on as DEGRADED or CREATING, which is correct from AWS's perspective.

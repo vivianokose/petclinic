@@ -24,11 +24,6 @@ variable "cluster_security_group_id" {
   type        = string
 }
 
-variable "node_security_group_id" {
-  description = "Security group ID for EKS worker nodes"
-  type        = string
-}
-
 variable "node_instance_types" {
   description = "Instance types for the managed node group"
   type        = list(string)

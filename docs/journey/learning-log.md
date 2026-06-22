@@ -60,3 +60,9 @@ What I am taking away: EKS managed node groups + launch templates have known int
 Cost so far: ~$0.30 in EKS control plane time. Budget alert quiet. Destroying tonight to stop the meter.
 
 Lesson: failed apply does not mean failed learning. The diagnostics I ran tonight (aws eks describe-cluster, kubectl describe pods, aws ec2 describe-launch-template-versions) are exactly the kind of debugging skills the role demands. I would not have learned them if everything just worked.
+
+Terraform provider validation catches typos before AWS sees them. The list of valid 
+enum values is compiled into the provider plugin. When I typed AL2023_x86_64 instead 
+of AL2023_x86_64_STANDARD, Terraform refused to even submit the plan. This is one 
+of the reasons terraform validate matters - it surfaces these kinds of errors 
+instantly.
