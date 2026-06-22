@@ -66,3 +66,40 @@ enum values is compiled into the provider plugin. When I typed AL2023_x86_64 ins
 of AL2023_x86_64_STANDARD, Terraform refused to even submit the plan. This is one 
 of the reasons terraform validate matters - it surfaces these kinds of errors 
 instantly.
+
+## Phase 1 complete - working EKS cluster
+
+After two days, three failed apply attempts, four distinct errors, and one diagnostic 
+manual node group creation via AWS CLI, I have a working EKS cluster on AWS.
+
+Final cluster state:
+- Kubernetes 1.34, AL2023_x86_64_STANDARD AMI
+- 2x t3.small nodes Ready, spread across us-east-1a and us-east-1b
+- coredns, kube-proxy, vpc-cni add-ons all Running
+- OIDC provider configured for future IRSA setup
+- All Terraform outputs resolving correctly
+
+The four errors I worked through:
+1. Kubernetes 1.29 retired by AWS for new clusters → upgraded to 1.34
+2. Launch template + managed node group SG injection silently failing → removed the launch template entirely
+3. AL2_x86_64 not supported for Kubernetes 1.33+ → switched to AL2023_x86_64_STANDARD
+4. Add-ons in parallel-create race with node group → added explicit depends_on from add-on to node group
+
+Things I learned that no tutorial would have taught me:
+- Provider validation catches enum typos before AWS sees them (saved me on AL2023_x86_64_STANDARD)
+- Failed apply does not corrupt state. Whatever succeeded is tracked, only the failure 
+  is missing. Retry just resumes.
+- When in doubt, create the resource manually via AWS CLI to see the real error AWS 
+  returns. If AWS accepts what Terraform sent, the problem is Terraform timing or 
+  dependencies, not the request itself.
+- EKS add-ons that need AWS API access (like aws-ebs-csi-driver) require IRSA. Installing 
+  them without IRSA gives you a healthy-looking pod that cannot do its job.
+- The aws_eks_addon resource is opinionated about waiting for ACTIVE state. If something 
+  upstream is broken, the add-on apply times out at 20 minutes and the real error is 
+  buried under the timeout.
+
+Cost so far: ~$1.20 in EKS control plane time across the failed attempts. The budget 
+alert at $20 has not triggered. Well within target.
+
+Next phase: stop the environment to save cost while I write content, then come back 
+fresh for Phase 2 (RDS MySQL).

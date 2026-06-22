@@ -50,3 +50,15 @@ Why it failed to install initially: The EBS CSI controller pod tries to make AWS
 What I am doing instead: Removed the add-on from Phase 1. Will add it back in Phase 4 when I set up IRSA properly. Phase 1 and Phase 2 (RDS) do not need persistent volumes.
 
 Lesson: Add-ons that need AWS API access need IRSA. Installing them without IRSA results in healthy-looking pods that cannot do their job. EKS reports the add-on as DEGRADED or CREATING, which is correct from AWS's perspective.
+
+## What I learned by failing five times in a row
+
+Real engineering is not "code works first try." Real engineering is the discipline 
+to diagnose calmly when things fail. Every senior engineer I will ever interview with 
+has stories like this one. The difference between a junior and a senior is not that 
+seniors have fewer failures. It is that seniors stay calm, ask better questions, 
+and write down what they learned.
+
+I now know how to read a Terraform plan, decode an EKS error, manually create AWS 
+resources to isolate the failure, and fix configuration issues without panic. None 
+of that is on a certification syllabus. All of it matters in the actual job.
